@@ -24,11 +24,11 @@ for command in commands:
     if error:
         print('Error: ', error)
 
+    
 
 
 
-
-
+    
 
 def handler(event):
     print("pre event")
@@ -48,6 +48,56 @@ def handler(event):
     print("IN PROGRESS:")
     # do the things
     
+    from pdf2image import convert_from_path
+ 
+    images = convert_from_path('1.pdf')
+    
+    for i in range(len(images)):
+    
+        
+        images[i].save('page'+ str(i) +'.jpg', 'JPEG')
+
+    from transformers import DonutProcessor, VisionEncoderDecoderModel
+
+    processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
+    model = VisionEncoderDecoderModel.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
+
+    image=images[0]
+    pixel_values = processor(image, return_tensors="pt").pixel_values
+    print(pixel_values.shape)
+
+    import torch
+
+    task_prompt = "<s_docvqa><s_question>{user_input}</s_question><s_answer>"
+    question = "Cual es el precio total?"
+    prompt = task_prompt.replace("{user_input}", question)
+    decoder_input_ids = processor.tokenizer(prompt, add_special_tokens=False, return_tensors="pt")["input_ids"]
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+
+    outputs = model.generate(pixel_values.to(device),
+                                decoder_input_ids=decoder_input_ids.to(device),
+                                max_length=model.decoder.config.max_position_embeddings,
+                                early_stopping=True,
+                                pad_token_id=processor.tokenizer.pad_token_id,
+                                eos_token_id=processor.tokenizer.eos_token_id,
+                                use_cache=True,
+                                num_beams=1,
+                                bad_words_ids=[[processor.tokenizer.unk_token_id]],
+                                return_dict_in_generate=True,
+                                output_scores=True)
+    
+
+    import re
+
+    seq = processor.batch_decode(outputs.sequences)[0]
+    seq = seq.replace(processor.tokenizer.eos_token, "").replace(processor.tokenizer.pad_token, "")
+    seq = re.sub(r"<.*?>", "", seq, count=1).strip()  # remove first task start token
+    print(seq)
+
+    processor.token2json(seq)
+
     #subprocess.run(["python", "codeServe_V3.py", '--audio_folder' ,folder_name, '--token_user', f'"{token_user}"'], check=True)
 
     ###########OPTIONS########################
