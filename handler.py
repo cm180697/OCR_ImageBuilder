@@ -35,11 +35,11 @@ def handler(event):
     print(event)
 
     # Extract folder_name from the event dictionary
-    folder_name = event.get('input', {}).get('folder')
+    question = event.get('input', {}).get('question')
     # token_user = event.get('input', {}).get('token_user')
     # print("token_user:", token_user)
-    if not folder_name:
-        print("Folder name not provided in event.")
+    if not question:
+        print("question not provided in event.")
         return "Error"
     # if not token_user:
     #     print("Token user not provided in event.")
@@ -69,7 +69,7 @@ def handler(event):
     import torch
 
     task_prompt = "<s_docvqa><s_question>{user_input}</s_question><s_answer>"
-    question = "Cual es el precio total?"
+    #question = "Cual es el precio total?"
     prompt = task_prompt.replace("{user_input}", question)
     decoder_input_ids = processor.tokenizer(prompt, add_special_tokens=False, return_tensors="pt")["input_ids"]
 
@@ -96,7 +96,7 @@ def handler(event):
     seq = re.sub(r"<.*?>", "", seq, count=1).strip()  # remove first task start token
     print(seq)
 
-    processor.token2json(seq)
+    answer=processor.token2json(seq)
 
     #subprocess.run(["python", "codeServe_V3.py", '--audio_folder' ,folder_name, '--token_user', f'"{token_user}"'], check=True)
 
@@ -120,7 +120,7 @@ def handler(event):
 
 
 
-    return "Done"
+    return answer
 
 runpod.serverless.start({
     "handler": handler
