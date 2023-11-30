@@ -10,8 +10,8 @@ commands = [
     'pip install -q git+https://github.com/huggingface/transformers.git',
     'pip install -q datasets sentencepiece',
     'pip install protobuf',
-    'apt-get update',
-    'apt-get install poppler-utils',
+    'apt-get update -y',
+    'apt-get install poppler-utils -y',
     'pip install pdf2image'
 ]
 
