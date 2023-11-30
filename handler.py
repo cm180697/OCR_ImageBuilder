@@ -1,14 +1,4 @@
-import runpod
-import os
-import time
 import subprocess
-import shutil
-import subprocess
-from pdf2image import convert_from_path
-import torch
-import re
-from transformers import DonutProcessor, VisionEncoderDecoderModel
-
 
 commands = [
     'pip install -q git+https://github.com/huggingface/transformers.git',
@@ -27,6 +17,16 @@ for command in commands:
         print('Output: ', output)
     if error:
         print('Error: ', error)
+
+
+import runpod
+import os
+import time
+import shutil
+from pdf2image import convert_from_path
+import torch
+import re
+from transformers import DonutProcessor, VisionEncoderDecoderModel
 
     
 processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
