@@ -1,6 +1,5 @@
 import subprocess
 
-
 # Install required packages
 commands = [
     'pip install -q git+https://github.com/huggingface/transformers.git',
@@ -28,6 +27,7 @@ from pdf2image import convert_from_path
 import torch
 import re
 from transformers import DonutProcessor, VisionEncoderDecoderModel
+import json  # Import json for creating JSON objects
 
 # Load model and processor
 processor = DonutProcessor.from_pretrained("naver-clova-ix/donut-base-finetuned-docvqa")
@@ -37,6 +37,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
 def process_pdf(pdf_path, question):
+    answers = []  # List to store answers for each page
     images = convert_from_path(pdf_path)
     for i, image in enumerate(images):
         pixel_values = processor(image, return_tensors="pt").pixel_values
@@ -60,7 +61,9 @@ def process_pdf(pdf_path, question):
         seq = seq.replace(processor.tokenizer.eos_token, "").replace(processor.tokenizer.pad_token, "")
         seq = re.sub(r"<.*?>", "", seq, count=1).strip()  # remove first task start token
         answer = processor.token2json(seq)
-        print(f"Answer for page {i}: {answer}")
+        answers.append({"page": i, "answer": answer})
+
+    return answers  # Return the list of answers
 
 def handler(event):
     print("pre event")
@@ -75,14 +78,15 @@ def handler(event):
 
     print("IN PROGRESS:")
     
-    # Iterate over all PDF files in the specified folder
+    results = []  # List to store results for each PDF
     for pdf_file in os.listdir(folder_path):
         if pdf_file.endswith(".pdf"):
             pdf_path = os.path.join(folder_path, pdf_file)
             print(f"Processing file: {pdf_path}")
-            process_pdf(pdf_path, question)
+            answers = process_pdf(pdf_path, question)
+            results.append({"filename": pdf_file, "question": question, "answers": answers})
 
-    return "Processing complete"
+    return json.dumps(results, indent=4)  # Return JSON object
 
 runpod.serverless.start({
     "handler": handler
